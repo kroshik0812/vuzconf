@@ -17,9 +17,9 @@ const UniversityPage = () => {
   const [conferences, setConferences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [universityUid, setUniversityUid] = useState(null); // Добавляем состояние для universityUid
+  const [universityDetails, setUniversityDetails] = useState(universityData); // Состояние для деталей университета
 
-  const images = [foto_1, foto_2, foto_3, foto_4]; // Массив изображений
+  const images = [foto_1, foto_2, foto_3, foto_4];
 
   const fetchConferences = async (universityUid) => {
     setLoading(true);
@@ -38,14 +38,32 @@ const UniversityPage = () => {
     }
   };
 
+  const fetchUniversityDetails = async (universityUid) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.request(getConfig('GET', `universities/${universityUid}`));
+      if (response.data.status === 'success') {
+        setUniversityDetails(response.data.data);
+      } else {
+        setError('Не удалось загрузить детали университета');
+      }
+    } catch (error) {
+      setError('Не удалось загрузить детали университета');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (university) {
-      // Устанавливаем universityUid в состояние
-      setUniversityUid(university);
+      setSelectedUniversity(university);
+      if (!universityData.name) {
+        fetchUniversityDetails(university); // Загружаем детали университета, если их нет в location.state
+      }
       fetchConferences(university);
-      setSelectedUniversity(university); // Устанавливаем текущий университет
     }
-  }, [university, setSelectedUniversity]);
+  }, [university, setSelectedUniversity, universityData]);
 
   if (loading) {
     return <Spinner animation="border" />;
@@ -57,17 +75,17 @@ const UniversityPage = () => {
 
   return (
     <div className="container mt-5 pt-4">
-      <h1>{universityData.name || "Название университета"}</h1><br></br>
+      <h1>{universityDetails.name || "Название университета"}</h1><br></br>
       <div className="d-flex flex-wrap">
         {conferences.map((conference, index) => (
           <ConferenceCard
             key={conference.uid}
-            universityUid={universityUid} // Передаем universityUid в ConferenceCard
+            universityUid={university}
             id={conference.uid}
             title={conference.name}
             date={conference.date}
             description={conference.type}
-            image={images[index % images.length]} // Чередующиеся изображения
+            image={images[index % images.length]}
           />
         ))}
       </div>
